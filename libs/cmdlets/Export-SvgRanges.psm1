@@ -78,7 +78,7 @@ function Export-SvgRanges {
         function Get-Dependency {
             param ($Command, $InstallHint)
             if (-not (Get-Command $Command -ErrorAction SilentlyContinue)) {
-                [console]::write($logProps.logname + $logProps.seperator + "Running $(csole -s 'Dependency Check...' -c magenta) > $Command")
+                [console]::write("$($logProps.logname)$($logProps.seperator) Running $(csole -s 'Dependency Check...' -c magenta) > $Command")
                 csole -String "Dependency '$Command' not found. $InstallHint" -Color Red
                 throw "Dependency missing."
             }
@@ -88,9 +88,9 @@ function Export-SvgRanges {
         Get-Dependency -Command $imagemagickCmd -InstallHint "Install from: https://imagemagick.org/"
 
         $logProps = @{
-          logname = $global:_magicgester.logname
-          seperator = $global:_magicgester.seperator
-          sublog = $global:_magicgester.sublog
+            logname = $global:_magicgester.logprops.logname
+            seperator = $global:_magicgester.logprops.seperator
+            sublog    = $global:_magicgester.logprops.sublog
         }
     }
 
@@ -99,12 +99,12 @@ function Export-SvgRanges {
         if (-not (Test-Path -Path $Destination)) {
             New-Item -ItemType Directory -Path $Destination -Force | Out-Null
         }
-        [console]::write($logProps.logname + $logProps.seperator + "running $(csole -s 'Export Ranges from SVG' -c magenta)`n")
+        [console]::write("$($logProps.logname)$($logProps.seperator) running $(csole -s 'Export Ranges from SVG' -c magenta)`n")
         
         # Define export logic
         function Export-UsingInkscape {
             param ($Format, $Ranges)
-            [console]::write($logProps.logname + $logProps.seperator + "running $(csole -s '[InkscapeWrapper]' -c magenta)`n")
+            [console]::write("$($logProps.logname)$($logProps.seperator) running $(csole -s '[InkscapeWrapper]' -c magenta)`n")
             foreach ($range in $Ranges) {
                 $width, $height = $range -split "x"
                 if ($name) {
@@ -118,9 +118,7 @@ function Export-SvgRanges {
                     New-Item -ItemType Directory -Path $outputFolder -Force | Out-Null
                 }
                 & $inkscapeCmd --export-width=$width --export-height=$height --export-filename=$outputPath $Source
-                [console]::write($logProps.sublog + 
-                    "exported range: $(csole -s $outputPath -c darkcyan)`n"
-                    )
+                [console]::write("$($logProps.sublog) exported range: $(csole -s $outputPath -c darkcyan)`n")
             }
         }
 
@@ -129,7 +127,7 @@ function Export-SvgRanges {
                 [string]$Format,
                 [array]$Ranges
             )
-            [console]::write($logProps.logname + $logProps.seperator + "running $(csole -s '[ImageMagickWrapper]' -c magenta)`n")
+            [console]::write("$($logProps.logname)$($logProps.seperator) running $(csole -s '[ImageMagickWrapper]' -c magenta)`n")
             foreach ($range in $Ranges) {
                 # Split width and height from the range
                 $width, $height = $range -split "x"
@@ -142,7 +140,7 @@ function Export-SvgRanges {
                 $outputFolder = Split-Path -Parent $pngExportPath
                 if (-not (Test-Path $outputFolder)) {
                     try {
-                        [console]::write($logProps.logname + $logProps.seperator + "running $(csole -s '[Create Output Folder]' -c magenta)`n")
+                        [console]::write("$($logProps.logname)$($logProps.seperator) running $(csole -s '[Create Output Folder]' -c magenta)`n")
                         New-Item -ItemType Directory -Path $outputFolder -Force | Out-Null
                     }
                     catch {
@@ -159,7 +157,7 @@ function Export-SvgRanges {
                 try {
                     & $imagemagickCmd $pngExportPath (Join-Path -Path $exportLocation -ChildPath $icoFileName)
                     # Success message
-                    [console]::write($logProps.logname + $logProps.seperator + "exported $(csole -s "$exportLocation\$icoFileName" -c darkyellow)`n")
+                    [console]::write("$($logProps.logname)$($logProps.seperator) exported $(csole -s "$exportLocation\$icoFileName" -c darkyellow)`n")
                 }
                 catch {
                     csole -String "Failed to execute ImageMagick for $pngExportPath" -Color Red
@@ -171,7 +169,8 @@ function Export-SvgRanges {
         # Export to each format
         if ($PngRanges) { Export-UsingInkscape -Format "png" -Ranges $PngRanges }
         if ($IcoRanges) {
-            [console]::write($logProps.logname + $logProps.seperator + "exporting ico ranges: $(csole -s "$($IcoRanges -join ', ')" -c darkcyan)`n")
+            start-sleep -Seconds 3 # wait for inkscape to finish
+            [console]::write("$($logProps.logname)$($logProps.seperator) exporting ico ranges: $(csole -s "$($IcoRanges -join ', ')" -c darkcyan)`n")
             if ((Test-Path "$destination\ico") -eq $false) {
                 New-Item -ItemType Directory -Path "$destination\ico" -Force | Out-Null
             }
@@ -179,7 +178,6 @@ function Export-SvgRanges {
                 $width, $height = $range -split "x"
                 Export-UsingInkscape -Format 'png' -Ranges @($range)
                 Export-UsingImageMagick -Format 'ico' -Ranges @($range)
-
             }
         }
         if ($JpgRanges) { Export-UsingInkscape -Format "jpg" -Ranges $JpgRanges }
@@ -214,7 +212,7 @@ function Export-SvgRanges {
             $report['WebpRanges'] = $WebpRanges.Count
         }
         # Success message
-        [console]::write($logProps.logname + $logProps.seperator + "$( csole -s 'export completed successfully' -c green )`n")
+        [console]::write("$($logProps.logname)$($logProps.seperator) $( csole -s 'export completed successfully' -c green )`n")
         return $report
     }
 }
